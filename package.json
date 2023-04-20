@@ -1,0 +1,9 @@
+{
+  "type": "module",
+  "scripts": {
+    "dev": "node app.js & node browsersync.js"
+  },
+  "devDependencies": {
+    "browser-sync": "^2.29.1"
+  }
+}

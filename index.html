@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>webgl-test</title>
+    <style>
+      * {
+        font-family: Menlo;
+      }
+
+      ul {
+        margin: 0;
+        padding: 0 1em;
+        line-height: 1.4;
+      }
+    </style>
+  </head>
+  <body>
+    <p>webgl-test</p>
+    <ul data-pages="{{folders}}" id="list"></ul>
+
+    <script>
+      const list = document.getElementById('list')
+      const pages = list.dataset.pages
+
+      pages.split(',').forEach(page => {
+        list.insertAdjacentHTML(
+          'beforeend',
+          `<li><a href="${page}">${page}</a></li>`
+        )
+      })
+    </script>
+  </body>
+</html>
