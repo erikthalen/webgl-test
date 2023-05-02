@@ -162,14 +162,14 @@ const drawScene = () => {
 drawScene()
 
 // ui
-const pane = new Tweakpane.Pane()
+// const pane = new Tweakpane.Pane()
 
 // pane.addInput(state, 'triangles', { step: 1 })
-pane.addInput(state, 'resolution', { step: 10 })
-pane.addInput(state, 'size')
-pane.addInput(state, 'knobsize')
-pane.addInput(state, 'center')
+// pane.addInput(state, 'resolution', { step: 10 })
+// pane.addInput(state, 'size')
+// pane.addInput(state, 'knobsize')
+// pane.addInput(state, 'center')
 
-pane.on('change', e => {
-  drawScene()
-})
+// pane.on('change', e => {
+//   drawScene()
+// })
