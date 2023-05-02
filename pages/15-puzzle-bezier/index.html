@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>bezier vertex</title>
+    <script src="lib/BSpline.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tweakpane@3.1.7/dist/tweakpane.min.js"></script>
+    <script type="module" src="app-15.js"></script>
+    <link rel="icon" type="image/jpg" href="/favicon.jpg">
+    <style>
+      #box {
+        position: relative;
+        width: 1000px;
+        height: 1000px;
+        background: #eee;
+      }
+      
+      .dot {
+        position: absolute;
+        width: 7px;
+        height: 7px;
+        background: red;
+        border-radius: 10px;
+        translate: -50% -50%;
+      }
+
+      .dot:after {
+        content: attr(title);
+        position: absolute;
+        bottom: -1.3em;
+        left: 0.2em;
+        color: dodgerblue;
+        font-size: 12px;
+        font-weight: bold;
+      }
+      
+      .big {
+        width: 10px;
+        height: 10px;
+        background: dodgerblue;
+
+      }
+
+      div.tp-dfwv {
+        width: 300px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="box">
+
+    </div>
+  </body>
+</html>
