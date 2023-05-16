@@ -70,7 +70,7 @@ const state = {
   scale: { x: 1, y: 1 },
 
   // piece
-  size: { x: 0.035, y: 0.035 },
+  size: { x: 0.04, y: 0.035 },
   knobsize: 1,
 
   resolution: 100,
@@ -165,7 +165,7 @@ const tick = () => {
   drawScene()
 
   console.log(performance.now() - t0)
-  requestAnimationFrame(tick)
+  // requestAnimationFrame(tick)
 }
 
 tick()

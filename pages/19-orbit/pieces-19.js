@@ -3,7 +3,7 @@ import { getPiece } from './lib/piece.js'
 export const makePieces = (gl, loc, pieces, options) => {
   let globalVertexIndex = 0
 
-  const piecesData = pieces.map(({ id, shapes, position, color }) => {
+  const piecesData = pieces.map(({ id, shapes, position, color }, idx) => {
     const VERTICES_PER_ATTRIBUTE = 2 // 2 === 2d / xy
 
     const objectVertices = getPiece({ shapes, ...options })
@@ -16,12 +16,11 @@ export const makePieces = (gl, loc, pieces, options) => {
     globalVertexIndex += objectLength
 
     return {
-      id,
+      id: id || idx,
       bufferIndex: ownIndex,
       objectLength,
       vertices: {
         triangles: objectVertices.triangles,
-        // index: objectVertices.indexes.map(index => index + ownIndexOffset),
         object: objectVertices.vertices,
         color: Array(objectLength).fill(color).flat(),
         position: Array(objectLength).fill([position.x, position.y]).flat(),
@@ -30,9 +29,6 @@ export const makePieces = (gl, loc, pieces, options) => {
   })
 
   const buffersData = [
-    // {
-    //   name: 'index',
-    // },
     {
       name: 'object',
       attributeLength: 2,
