@@ -1,20 +1,19 @@
-import { getPiece } from './lib/piece.js'
 import utils from './lib/gl-utils.js'
 import { m3 } from './lib/m3.js'
-import { getRandomColor } from './lib/getRandomColor.js'
 
 const vertexSrc = `#version 300 es
 #pragma vscode_glsllint_stage: vert
 
 layout(location = 0) in vec2 a_position;
 layout(location = 1) in vec3 a_color;
+layout(location = 2) in vec2 a_object;
 
 uniform mat3 u_matrix;
 
 out vec3 v_color;
 
 void main() {
-  gl_Position = vec4((u_matrix * vec3(a_position, 1)).xy, 0, 1);
+  gl_Position = vec4((u_matrix * vec3(a_position, 1)).xy + vec2(a_object), 0, 1);
 
   v_color = a_color;
 }`
@@ -38,9 +37,9 @@ const loc = {
   a: {
     position: 0,
     color: 1,
+    object: 2,
   },
   u: {
-    color: gl.getUniformLocation(program, 'u_color'),
     matrix: gl.getUniformLocation(program, 'u_matrix'),
   },
 }
@@ -65,68 +64,78 @@ const state = {
   rotation: 0,
   scale: { x: 1, y: 1 },
 
-  resolution: 100,
-
-  // piece
-  center: { x: 0, y: 0 },
-  size: { x: 0.5, y: 0.45 },
-  knobsize: 1,
+  position: { x: 0, y: 0 },
 }
-
-const piece = getPiece({
-  size: state.size,
-  shapes: ['in', 'out', 'in', 'out'],
-  knobsize: state.knobsize,
-  center: state.center,
-  resolution: state.resolution
-})
-
-console.log('triangle count', piece.triangles.length / 6)
-console.log('triangles', piece.triangles)
 
 const vao = gl.createVertexArray()
 gl.bindVertexArray(vao)
 
-const colorVertices = [...Array(piece.triangles.length / 2)]
-  .map(() => {
-    const color = getRandomColor()
-    return [color, color, color]
-  })
-  .flat(2)
-
-const positionData = new Float32Array(piece.triangles)
-const positionBuffer = gl.createBuffer()
-
-gl.enableVertexAttribArray(loc.a.position)
-gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
-gl.bufferData(gl.ARRAY_BUFFER, positionData, gl.STATIC_DRAW)
-gl.vertexAttribPointer(loc.a.position, 2, gl.FLOAT, false, 0, 0)
-
-const colorData = new Float32Array(colorVertices)
+const colorData = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1])
 const colorBuffer = gl.createBuffer()
 gl.enableVertexAttribArray(loc.a.color)
 gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer)
 gl.bufferData(gl.ARRAY_BUFFER, colorData, gl.STATIC_DRAW)
 gl.vertexAttribPointer(loc.a.color, 3, gl.FLOAT, false, 0, 0)
+gl.vertexAttribDivisor(loc.a.color, 1)
+
+const positionData = new Float32Array([
+  state.position.x,
+  state.position.y,
+  0.2,
+  0.2,
+
+  -0.5,
+  0.5,
+  -0.5,
+  0.2,
+])
+const positionBuffer = gl.createBuffer()
+gl.enableVertexAttribArray(loc.a.position)
+gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
+gl.bufferData(gl.ARRAY_BUFFER, positionData, gl.STATIC_DRAW)
+gl.vertexAttribPointer(loc.a.position, 2, gl.FLOAT, false, 0, 0)
+gl.vertexAttribDivisor(loc.a.position, 1)
+
+const objectData = new Float32Array([
+  0, 0.5, -0.5, -0.5, 0.5, -0.5, 0.6, 0.6, 0.5, 0.5, 0.5, 0.6,
+])
+const objectBuffer = gl.createBuffer()
+gl.enableVertexAttribArray(loc.a.object)
+gl.bindBuffer(gl.ARRAY_BUFFER, objectBuffer)
+gl.bufferData(gl.ARRAY_BUFFER, objectData, gl.STATIC_DRAW)
+gl.vertexAttribPointer(loc.a.object, 2, gl.FLOAT, false, 0, 0)
 
 const drawScene = () => {
   clearGl()
   const matrix = computeMatrix(state)
   gl.uniformMatrix3fv(loc.u.matrix, false, matrix)
-  gl.drawArrays(gl.TRIANGLES, 0, piece.triangles.length / 2)
+
+  const positionData = new Float32Array([
+    state.position.x,
+    state.position.y,
+    0.2,
+    0.2,
+
+    -0.5,
+    0.5,
+    -0.5,
+    0.2,
+  ])
+
+  gl.enableVertexAttribArray(loc.a.position)
+  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
+  gl.bufferData(gl.ARRAY_BUFFER, positionData, gl.STATIC_DRAW)
+
+  gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, 3)
 }
 
 drawScene()
 
 // ui
-// const pane = new Tweakpane.Pane()
+const pane = new Tweakpane.Pane()
 
-// pane.addInput(state, 'triangles', { step: 1 })
-// pane.addInput(state, 'resolution', { step: 10 })
-// pane.addInput(state, 'size')
-// pane.addInput(state, 'knobsize')
-// pane.addInput(state, 'center')
+pane.addInput(state, 'position', { x: { step: 0.01 }, y: { step: 0.01 } })
 
-// pane.on('change', e => {
-//   drawScene()
-// })
+pane.on('change', e => {
+  drawScene()
+})
