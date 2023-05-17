@@ -165,7 +165,7 @@ const tick = () => {
   drawScene()
 
   console.log(performance.now() - t0)
-  // requestAnimationFrame(tick)
+  requestAnimationFrame(tick)
 }
 
 tick()

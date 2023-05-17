@@ -59,7 +59,7 @@ const state = {
   origin: { x: 0, y: 0 },
   translation: { x: 0, y: 0 },
   rotation: 0,
-  scale: { x: 1, y: 1 },
+  zoom: 1,
 
   // piece
   position: { x: 0.05, y: -0.04 },
@@ -67,10 +67,12 @@ const state = {
 }
 
 const defaultOptions = {
-  size: { x: 0.012, y: 0.012 },
+  size: { x: 0.005, y: 0.0048 },
   resolution: 250,
   precision: 0.000001,
 }
+
+let matrix
 
 const computeMatrix = state => {
   const { origin, translation, rotation, scale } = state
@@ -79,7 +81,7 @@ const computeMatrix = state => {
     m3.translate(origin.x, origin.y),
     m3.rotate(rotation),
     m3.translate(translation.x, translation.y),
-    m3.scale(scale.x, scale.y)
+    m3.scale(zoom, zoom)
   )(m3.identity())
 
   return matrix
@@ -89,7 +91,7 @@ const pieces = makePieces(
   gl,
   loc,
   [
-    ...Array(1936)
+    ...Array(100)
       .fill(0)
       .map((_, idx, arr) => {
         const amount = arr.length
@@ -127,9 +129,12 @@ const pieces = makePieces(
   defaultOptions
 )
 
+console.log('vertices:', pieces.verticesLength)
+console.log('triangles:', pieces.verticesLength / 3)
+
 const drawScene = () => {
   clearGl()
-  const matrix = computeMatrix(state)
+  matrix = computeMatrix(state)
   gl.uniformMatrix3fv(loc.u.matrix, false, matrix)
 
   gl.bindVertexArray(pieces.vao)
@@ -140,28 +145,78 @@ const drawScene = () => {
 drawScene()
 
 // interaction
-pan(canvas)
+// pan(canvas)
 
-canvas.addEventListener('pan', ({ detail }) => {
-  state.translation = {
-    x: detail.position.x / 1000,
-    y: -detail.position.y / 1000,
-  }
-  state.scale = { x: detail.scale, y: detail.scale }
+// canvas.addEventListener('pan', ({ detail }) => {
+//   state.translation = {
+//     x: detail.position.x / 1000,
+//     y: -detail.position.y / 1000,
+//   }
+//   state.scale = { x: detail.scale, y: detail.scale }
+
+//   drawScene()
+// })
+
+let viewProjectionMat
+
+function makeCameraMatrix() {
+  const zoomScale = 1 / camera.zoom
+  let cameraMat = m3.identity()
+  cameraMat = m3.translate(cameraMat, camera.x, camera.y)
+  cameraMat = m3.rotate(cameraMat, camera.rotation)
+  cameraMat = m3.scale(cameraMat, zoomScale, zoomScale)
+  return cameraMat
+}
+
+function updateViewProjection() {
+  // same as ortho(0, width, height, 0, -1, 1)
+  const projectionMat = m3.projection(gl.canvas.width, gl.canvas.height)
+  const cameraMat = makeCameraMatrix()
+  let viewMat = m3.inverse(cameraMat)
+  viewProjectionMat = m3.multiply(projectionMat, viewMat)
+}
+
+function getClipSpaceMousePosition(e) {
+  // get normalized 0 to 1 position across and down canvas
+  const normalizedX = e.offsetX / canvas.clientWidth
+  const normalizedY = e.offsetY / canvas.clientHeight
+
+  // convert to clip space
+  const clipX = normalizedX * 2 - 1
+  const clipY = normalizedY * -2 + 1
+
+  return [clipX, clipY]
+}
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault()
+  const [clipX, clipY] = getClipSpaceMousePosition(e)
+
+  // position before zooming
+  const [preZoomX, preZoomY] = m3.transformPoint(
+    m3.inverse(viewProjectionMat),
+    [clipX, clipY]
+  )
+
+  // multiply the wheel movement by the current zoom level
+  // so we zoom less when zoomed in and more when zoomed out
+  const newZoom = state.zoom * Math.pow(2, e.deltaY * -0.01)
+  state.zoom = Math.max(0.02, Math.min(100, newZoom))
+
+  updateViewProjection()
+
+  // position after zooming
+  const [postZoomX, postZoomY] = m3.transformPoint(
+    m3.inverse(viewProjectionMat),
+    [clipX, clipY]
+  )
+
+  // camera needs to be moved the difference of before and after
+  camera.x += preZoomX - postZoomX
+  camera.y += preZoomY - postZoomY
 
   drawScene()
 })
-
-// canvas.addEventListener('mousemove', e => {
-//   state.origin = {
-//     x: (0.5 - e.offsetX / e.target.clientWidth) * -2,
-//     y: (0.5 - e.offsetY / e.target.clientHeight) * 2,
-//   }
-  
-//   console.log(state.origin)
-  
-//   drawScene()
-// })
 
 // ui
 const pane = new Tweakpane.Pane()
