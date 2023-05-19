@@ -1,3 +1,4 @@
+import { getRandomColor } from '../../lib/getRandomColor.js'
 import utils from '../lib/gl-utils.js'
 import { m4 } from '../lib/m4.js'
 import { colorData, positionData } from './data-10.js'
@@ -51,22 +52,12 @@ const loc = {
 
 gl.uniformMatrix4fv(loc.u.matrix, false, m4.create())
 
-const red = [1, 0.3, 0.3]
-const green = [0.3, 1, 0.3]
-const blue = [0.3, 0.3, 1]
-
-const colors = [red, green, blue]
-
 const state = {
   amount: 2000,
   pos: { x: -0.4, y: -0.2 },
   pos2: { x: 0.3, y: 0.2 },
 }
 
-const square1 = square(state.pos, red)
-const square2 = square(state.pos2, blue)
-
-const randomColor = () => colors[Math.floor(colors.length * Math.random())]
 const randomSize = () => Math.random() * 0.05
 const randomSpeed = () => Math.random()
 
@@ -75,7 +66,7 @@ const createSquares = () => Array(state.amount)
   .map(() =>
     square(
       { x: Math.random() * 2 - 1, y: Math.random() * 2 - 1 },
-      randomColor(),
+      getRandomColor(Math.random() * 100 + 100),
       randomSize(),
       randomSpeed()
     )
@@ -104,7 +95,7 @@ const drawScene = () => {
     new Float32Array(squares.map(square => square.vertices).flat()),
     gl.STATIC_DRAW
   )
-  gl.drawArrays(gl.TRIANGLES, 0, squares.length * square1.vertexCount)
+  gl.drawArrays(gl.TRIANGLES, 0, squares.length * 6)
   const t1 = performance.now()
   const fps = 1000 / (t1 - t0)
   if (fps < 40) {

@@ -1,6 +1,6 @@
 import utils from './lib/gl-utils.js'
 import { m3 } from './lib/m3.js'
-import { makePieces } from './pieces-19.js'
+import { makePieces } from './pieces-20.js'
 import { getRandomColor } from './lib/getRandomColor.js'
 import { orbit } from './lib/orbit.js'
 
@@ -61,7 +61,7 @@ const state = {
   zoom: 1,
 }
 
-const amount = 50 ** 2
+const amount = 10 ** 2
 
 const defaultOptions = {
   size: { x: 0.5 / Math.sqrt(amount), y: 0.48 / Math.sqrt(amount) },
@@ -86,7 +86,7 @@ const pieces = makePieces(
 
         const piece = {
           id: idx,
-          color: getRandomColor(),
+          color: getRandomColor(Math.random() * 100 - 50),
           position: { x, y },
           shapes: Array(4)
             .fill(0)

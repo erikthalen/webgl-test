@@ -9,9 +9,9 @@ const clear = () => {
 const draw = (p, big, text) => {
   box.insertAdjacentHTML(
     'beforeend',
-    `<div style="left: ${p[0] * 50 + 50}%; top: ${50 - p[1] * 50}%;" class="dot ${
-      big ? 'big' : ''
-    }" title="${text || ''}"></div>`
+    `<div style="left: ${p[0] * 50 + 50}%; top: ${
+      50 - p[1] * 50
+    }%;" class="dot ${big ? 'big' : ''}" title="${text || ''}"></div>`
   )
 }
 
@@ -22,17 +22,19 @@ const state = {
 const points = [
   [-1, 0],
   [-0.5, -0.05],
-  [-0.1, 0],
+  [-0.05, 0],
   [-0.5, 0.35],
-  [0, 0.6],
+  [0, 0.66],
   [0.5, 0.35],
-  [0.1, 0],
+  [0.05, 0],
   [0.5, -0.05],
   [1, 0],
 ]
 
 const drawPoints = () => {
-  const resizedPoints = setKnobsize(state.knobsize)(points)
+  const resizedPoints = setKnobsize({ x: state.knobsize, y: state.knobsize })(
+    points
+  )
 
   var spline = new BSpline(resizedPoints, 4)
 
@@ -54,7 +56,7 @@ drawPoints()
 
 const pane = new Tweakpane.Pane()
 
-pane.addInput(state, 'knobsize', { step: 0.001 })
+pane.addInput(state, 'knobsize', { step: 0.01 })
 
 pane.on('change', e => {
   drawPoints()

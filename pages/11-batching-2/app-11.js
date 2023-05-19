@@ -1,3 +1,4 @@
+import { getRandomColor } from '../../lib/getRandomColor.js'
 import utils from '../lib/gl-utils.js'
 import { m4 } from '../lib/m4.js'
 import square from './square-11.js'
@@ -52,18 +53,11 @@ const loc = {
 
 gl.uniformMatrix4fv(loc.u.matrix, false, m4.create())
 
-const red = [1, 0.6, 0.6]
-const green = [0.6, 1, 0.6]
-const blue = [0.6, 0.6, 1]
-
-const colors = [red, green, blue]
-
 const state = {
   amount: 7500,
   pos: { x: 0, y: 0 },
 }
 
-const randomColor = () => colors[Math.floor(colors.length * Math.random())]
 const randomSize = () => Math.random() * 0.1
 const randomSpeed = () => Math.random()
 
@@ -73,7 +67,7 @@ const createSquares = () =>
     .map(() =>
       square(
         { x: Math.random() * 4 - 2, y: Math.random() * 4 - 2 },
-        randomColor(),
+        getRandomColor(Math.random() * 360),
         randomSize(),
         randomSpeed()
       )
