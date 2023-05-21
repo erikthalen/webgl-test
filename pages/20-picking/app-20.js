@@ -13,12 +13,14 @@ layout(location = 0) in vec2 a_position;
 layout(location = 1) in vec3 a_color;
 layout(location = 3) in vec2 a_triangles;
 
+uniform vec2 u_resolution;
 uniform mat3 u_matrix;
 
 out vec3 v_color;
 
 void main() {
-  gl_Position = vec4(u_matrix * vec3(a_triangles + a_position, 1), 1);
+  vec2 uv = ((a_triangles + a_position) / u_resolution.xy) * u_resolution.y;
+  gl_Position = vec4(u_matrix * vec3(uv, 1), 1);
 
   v_color = a_color;
 }`
@@ -49,8 +51,8 @@ const loc = {
     triangles: 3,
   },
   u: {
-    color: gl.getUniformLocation(program, 'u_color'),
     matrix: gl.getUniformLocation(program, 'u_matrix'),
+    resolution: gl.getUniformLocation(program, 'u_resolution'),
   },
 }
 
@@ -59,13 +61,13 @@ const state = {
   translation: { x: 0, y: 0 },
   rotation: 0,
   zoom: 1,
+
+  amount: 25 ** 2,
 }
 
-const amount = 10 ** 2
-
 const defaultOptions = {
-  size: { x: 0.5 / Math.sqrt(amount), y: 0.48 / Math.sqrt(amount) },
-  resolution: 350,
+  size: { x: 0.5 / Math.sqrt(state.amount), y: 0.48 / Math.sqrt(state.amount) },
+  resolution: 150,
   precision: 0.000001,
 }
 
@@ -73,20 +75,21 @@ const pieces = makePieces(
   gl,
   loc,
   [
-    ...Array(amount)
+    ...Array(state.amount)
       .fill(0)
       .map((_, idx, arr) => {
         const amount = arr.length
         const rows = Math.sqrt(amount)
         const cols = amount / rows
         const x = ((idx % cols) / cols - 0.5 + defaultOptions.size.x) * 1.85
-        const y = (Math.floor(idx / cols) / rows - 0.5 + defaultOptions.size.y) * 1.85
+        const y =
+          (Math.floor(idx / cols) / rows - 0.5 + defaultOptions.size.y) * 1.85
 
         const shapes = ['out', 'in']
 
         const piece = {
           id: idx,
-          color: getRandomColor(Math.random() * 100 - 50),
+          color: getRandomColor(Math.random() * 360 + 100),
           position: { x, y },
           shapes: Array(4)
             .fill(0)
@@ -99,19 +102,39 @@ const pieces = makePieces(
   defaultOptions
 )
 
-console.log('vertices:', pieces.verticesLength)
-console.log('triangles:', pieces.verticesLength / 3)
+const pane = new Tweakpane.Pane()
+pane.registerPlugin(TweakpaneEssentialsPlugin)
+
+pane.addMonitor(state, 'amount')
+pane.addMonitor(state, 'zoom', { interval: 10 })
+pane.addMonitor(state.translation, 'x', { interval: 10 })
+pane.addMonitor(state.translation, 'y', { interval: 10 })
+pane.addMonitor(pieces, 'verticesLength')
+
+const fpsGraph = pane.addBlade({
+  view: 'fpsgraph',
+  label: 'fpsgraph',
+})
 
 let matrix
 
 const drawScene = () => {
+  // requestAnimationFrame(drawScene)
+  fpsGraph.begin()
+
   clearGl()
+
+  utils.setCanvasSize(canvas, gl)
 
   matrix = makeCameraMatrix()
 
   gl.uniformMatrix3fv(loc.u.matrix, false, matrix)
+  gl.uniform2fv(loc.u.resolution, [window.innerWidth, window.innerHeight])
+
   gl.bindVertexArray(pieces.vao)
   gl.drawArrays(gl.TRIANGLES, 0, pieces.verticesLength)
+
+  fpsGraph.end()
 }
 
 drawScene()
@@ -131,7 +154,7 @@ orbit({
   m3,
   canvas,
   state,
-  onUpdate: (newMatrix) => {
+  onUpdate: newMatrix => {
     matrix = newMatrix
     drawScene()
   },
