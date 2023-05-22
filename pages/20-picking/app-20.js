@@ -38,10 +38,7 @@ void main() {
   fragColor = vec4(v_color, 1.0);
 }`
 
-const { gl, program, clearGl, canvas } = utils.setupCanvas(
-  vertexSrc,
-  fragmentSrc
-)
+const { gl, program, canvas } = utils.setupCanvas(vertexSrc, fragmentSrc)
 
 const loc = {
   a: {
@@ -62,12 +59,12 @@ const state = {
   rotation: 0,
   zoom: 1,
 
-  amount: 25 ** 2,
+  amount: 20 ** 2,
 }
 
 const defaultOptions = {
   size: { x: 0.5 / Math.sqrt(state.amount), y: 0.48 / Math.sqrt(state.amount) },
-  resolution: 150,
+  resolution: 200,
   precision: 0.000001,
 }
 
@@ -78,22 +75,21 @@ const pieces = makePieces(
     ...Array(state.amount)
       .fill(0)
       .map((_, idx, arr) => {
-        const amount = arr.length
-        const rows = Math.sqrt(amount)
-        const cols = amount / rows
-        const x = ((idx % cols) / cols - 0.5 + defaultOptions.size.x) * 1.85
-        const y =
-          (Math.floor(idx / cols) / rows - 0.5 + defaultOptions.size.y) * 1.85
+        const rows = Math.sqrt(arr.length)
+        const cols = arr.length / rows
+        const { size } = defaultOptions
+        const x = ((idx % cols) / cols - 0.5 + size.x) * 1.8
+        const y = (Math.floor(idx / cols) / rows - 0.5 + size.y) * 1.8
 
         const shapes = ['out', 'in']
 
         const piece = {
           id: idx,
-          color: getRandomColor(Math.random() * 360 + 100),
+          color: getRandomColor(Math.random() * 70 + 200),
           position: { x, y },
-          shapes: Array(4)
-            .fill(0)
-            .map(() => shapes[Math.floor(Math.random() * shapes.length)]),
+          shapes: [...Array(4)].map(
+            () => shapes[Math.floor(Math.random() * shapes.length)]
+          ),
         }
 
         return piece
@@ -105,15 +101,15 @@ const pieces = makePieces(
 const pane = new Tweakpane.Pane()
 pane.registerPlugin(TweakpaneEssentialsPlugin)
 
-pane.addMonitor(state, 'amount')
-pane.addMonitor(state, 'zoom', { interval: 10 })
-pane.addMonitor(state.translation, 'x', { interval: 10 })
-pane.addMonitor(state.translation, 'y', { interval: 10 })
-pane.addMonitor(pieces, 'verticesLength')
+pane.addMonitor(state, 'amount', { label: 'Pieces' })
+pane.addMonitor(state, 'zoom', { label: 'Zoom' })
+pane.addMonitor(state.translation, 'x', { label: 'Position X' })
+pane.addMonitor(state.translation, 'y', { label: 'Position Y' })
+pane.addMonitor(pieces, 'verticesLength', { label: 'Vertices' })
 
 const fpsGraph = pane.addBlade({
   view: 'fpsgraph',
-  label: 'fpsgraph',
+  label: 'FPS',
 })
 
 let matrix
@@ -122,14 +118,7 @@ const drawScene = () => {
   // requestAnimationFrame(drawScene)
   fpsGraph.begin()
 
-  clearGl()
-
-  utils.setCanvasSize(canvas, gl)
-
-  matrix = makeCameraMatrix()
-
-  gl.uniformMatrix3fv(loc.u.matrix, false, matrix)
-  gl.uniform2fv(loc.u.resolution, [window.innerWidth, window.innerHeight])
+  // clearGl()
 
   gl.bindVertexArray(pieces.vao)
   gl.drawArrays(gl.TRIANGLES, 0, pieces.verticesLength)
@@ -155,8 +144,19 @@ orbit({
   canvas,
   state,
   onUpdate: newMatrix => {
-    matrix = newMatrix
+    matrix = makeCameraMatrix()
+    gl.uniformMatrix3fv(loc.u.matrix, false, matrix)
     drawScene()
   },
   matrixFunction: makeCameraMatrix,
 })
+
+const handleResize = () => {
+  utils.setCanvasSize(canvas, gl, 2)
+  gl.uniform2fv(loc.u.resolution, [window.innerWidth, window.innerHeight])
+  drawScene()
+}
+
+handleResize()
+
+window.addEventListener('resize', handleResize)
