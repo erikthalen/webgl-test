@@ -28,8 +28,6 @@ export const makePieces = (gl, loc, pieces, options) => {
     }
   })
 
-  console.log(cache)
-
   const buffersData = [
     {
       name: 'object',

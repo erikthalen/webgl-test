@@ -1,9 +1,9 @@
 {
   "type": "module",
   "scripts": {
-    "dev": "node app.js & node browsersync.js"
+    "dev": "node app.js & browser-sync start --proxy 'http://localhost:3012' --no-notify --files 'pages/**/*.*'"
   },
-  "devDependencies": {
-    "browser-sync": "^2.29.1"
+  "dependencies": {
+    "twgl.js": "^5.3.1"
   }
 }

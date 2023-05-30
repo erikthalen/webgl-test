@@ -3,43 +3,14 @@ import { m3 } from './lib/m3.js'
 import { makePieces } from './pieces-20.js'
 import { getRandomColor } from './lib/getRandomColor.js'
 import { orbit } from './lib/orbit.js'
-
-const glsl = x => x
-
-const vertexSrc = glsl`#version 300 es
-#pragma vscode_glsllint_stage: vert
-
-layout(location = 0) in vec2 a_position;
-layout(location = 1) in vec3 a_color;
-layout(location = 3) in vec2 a_triangles;
-
-uniform vec2 u_resolution;
-uniform mat3 u_matrix;
-
-out vec3 v_color;
-
-void main() {
-  vec2 uv = ((a_triangles + a_position) / u_resolution.xy) * u_resolution.y;
-  gl_Position = vec4(u_matrix * vec3(uv, 1), 1);
-
-  v_color = a_color;
-}`
-
-const fragmentSrc = glsl`#version 300 es
-#pragma vscode_glsllint_stage: frag
-
-precision mediump float;
-
-in vec3 v_color;
-
-out vec4 fragColor;
-
-void main() {
-  fragColor = vec4(v_color, 1.0);
-}`
+import { vertexSrc, fragmentSrc } from './shaders.js'
+import { getId } from './lib/picking.js'
 
 const { gl, program, canvas } = utils.setupCanvas(vertexSrc, fragmentSrc)
 
+/**
+ * gl locations
+ */
 const loc = {
   a: {
     position: 0,
@@ -53,21 +24,29 @@ const loc = {
   },
 }
 
+/**
+ * world state
+ */
 const state = {
   // world
   translation: { x: 0, y: 0 },
   rotation: 0,
   zoom: 1,
 
-  amount: 20 ** 2,
+  // pieces
+  amount: 2 ** 2,
 }
 
 const defaultOptions = {
-  size: { x: 0.5 / Math.sqrt(state.amount), y: 0.48 / Math.sqrt(state.amount) },
-  resolution: 200,
-  precision: 0.000001,
+  size: {
+    x: 0.5 / Math.sqrt(state.amount),
+    y: 0.48 / Math.sqrt(state.amount),
+  },
 }
 
+/**
+ * objects
+ */
 const pieces = makePieces(
   gl,
   loc,
@@ -84,7 +63,7 @@ const pieces = makePieces(
         const shapes = ['out', 'in']
 
         const piece = {
-          id: idx,
+          id: getId(idx),
           color: getRandomColor(Math.random() * 70 + 200),
           position: { x, y },
           shapes: [...Array(4)].map(
@@ -98,6 +77,13 @@ const pieces = makePieces(
   defaultOptions
 )
 
+/**
+ * picking
+ */
+
+/**
+ * stats
+ */
 const pane = new Tweakpane.Pane()
 pane.registerPlugin(TweakpaneEssentialsPlugin)
 
@@ -112,13 +98,11 @@ const fpsGraph = pane.addBlade({
   label: 'FPS',
 })
 
-let matrix
-
+/**
+ * render
+ */
 const drawScene = () => {
-  // requestAnimationFrame(drawScene)
   fpsGraph.begin()
-
-  // clearGl()
 
   gl.bindVertexArray(pieces.vao)
   gl.drawArrays(gl.TRIANGLES, 0, pieces.verticesLength)
@@ -128,7 +112,9 @@ const drawScene = () => {
 
 drawScene()
 
-// interaction
+/**
+ * camera
+ */
 function makeCameraMatrix() {
   const zoomScale = 1 / state.zoom
   return m3.pipe(
@@ -139,18 +125,23 @@ function makeCameraMatrix() {
   )(m3.identity())
 }
 
+/**
+ * orbit
+ */
 orbit({
   m3,
   canvas,
   state,
   onUpdate: newMatrix => {
-    matrix = makeCameraMatrix()
-    gl.uniformMatrix3fv(loc.u.matrix, false, matrix)
+    gl.uniformMatrix3fv(loc.u.matrix, false, makeCameraMatrix())
     drawScene()
   },
   matrixFunction: makeCameraMatrix,
 })
 
+/**
+ * resize
+ */
 const handleResize = () => {
   utils.setCanvasSize(canvas, gl, 2)
   gl.uniform2fv(loc.u.resolution, [window.innerWidth, window.innerHeight])
@@ -158,5 +149,4 @@ const handleResize = () => {
 }
 
 handleResize()
-
 window.addEventListener('resize', handleResize)
