@@ -1,3 +1,4 @@
+import { getId } from '../../lib/picking.js'
 import { getPiece, cache } from './lib/piece.js'
 
 export const makePieces = (gl, loc, pieces, options) => {
@@ -24,6 +25,7 @@ export const makePieces = (gl, loc, pieces, options) => {
         object: objectVertices.vertices,
         color: Array(objectLength).fill(color).flat(),
         position: Array(objectLength).fill([position.x, position.y]).flat(),
+        id: Array(objectLength).fill(getId(idx)).flat(),
       },
     }
   })
@@ -45,35 +47,34 @@ export const makePieces = (gl, loc, pieces, options) => {
       name: 'position',
       attributeLength: 2,
     },
+    {
+      name: 'id',
+      attributeLength: 4,
+    },
   ]
 
   const vao = gl.createVertexArray()
   gl.bindVertexArray(vao)
 
   const buffers = buffersData.reduce((acc, cur) => {
-    const indexBuffer = cur.name === 'index'
-    const bufferTarget = indexBuffer ? gl.ELEMENT_ARRAY_BUFFER : gl.ARRAY_BUFFER
     const dataArray = piecesData.map(piece => piece.vertices[cur.name]).flat()
-    const data = indexBuffer
-      ? new Uint16Array(dataArray)
-      : new Float32Array(dataArray)
+
+    // console.log(cur.name, dataArray)
 
     const buffer = gl.createBuffer()
 
-    gl.bindBuffer(bufferTarget, buffer)
-    gl.bufferData(bufferTarget, data, gl.STATIC_DRAW)
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(dataArray), gl.STATIC_DRAW)
 
-    if (!indexBuffer) {
-      gl.enableVertexAttribArray(loc.a[cur.name])
-      gl.vertexAttribPointer(
-        loc.a[cur.name],
-        cur.attributeLength,
-        gl.FLOAT,
-        false,
-        0,
-        0
-      )
-    }
+    gl.enableVertexAttribArray(loc.a[cur.name])
+    gl.vertexAttribPointer(
+      loc.a[cur.name],
+      cur.attributeLength,
+      gl.FLOAT,
+      false,
+      0,
+      0
+    )
 
     return {
       ...acc,

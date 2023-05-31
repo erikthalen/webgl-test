@@ -39,44 +39,8 @@ function createFlattenedFunc(createVerticesFunc, vertsPerColor) {
 // which is important to keep the samples simple.
 
 export const flattenedPrimitives = {
-  create3DFBufferInfo: createFlattenedFunc(
-    twgl.primitives.create3DFVertices,
-    6
-  ),
   createCubeBufferInfo: createFlattenedFunc(
     twgl.primitives.createCubeVertices,
     6
-  ),
-  createPlaneBufferInfo: createFlattenedFunc(
-    twgl.primitives.createPlaneVertices,
-    6
-  ),
-  createSphereBufferInfo: createFlattenedFunc(
-    twgl.primitives.createSphereVertices,
-    6
-  ),
-  createTruncatedConeBufferInfo: createFlattenedFunc(
-    twgl.primitives.createTruncatedConeVertices,
-    6
-  ),
-  createXYQuadBufferInfo: createFlattenedFunc(
-    twgl.primitives.createXYQuadVertices,
-    6
-  ),
-  createCresentBufferInfo: createFlattenedFunc(
-    twgl.primitives.createCresentVertices,
-    6
-  ),
-  createCylinderBufferInfo: createFlattenedFunc(
-    twgl.primitives.createCylinderVertices,
-    6
-  ),
-  createTorusBufferInfo: createFlattenedFunc(
-    twgl.primitives.createTorusVertices,
-    6
-  ),
-  createDiscBufferInfo: createFlattenedFunc(
-    twgl.primitives.createDiscVertices,
-    4
   ),
 }
