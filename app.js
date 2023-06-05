@@ -7,8 +7,9 @@ import { render } from './server/render.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-const foldernames = fs.readdirSync(__dirname + '/pages')
-const folders = foldernames.filter(foldername => !foldername.startsWith('.'))
+const folders = fs
+  .readdirSync(__dirname + '/pages')
+  .filter(folder => !folder.startsWith('.'))
 
 router.static('pages')
 router.static(folders.map(folder => 'pages/' + folder))

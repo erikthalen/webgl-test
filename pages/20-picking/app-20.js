@@ -12,12 +12,13 @@ import {
 import { getId } from './lib/picking.js'
 
 const canvas = document.querySelector('canvas')
-const gl = canvas.getContext('webgl2')
+const gl = canvas.getContext('webgl2', { alpha: false })
 
 utils.setCanvasSize(canvas, gl, 2)
 
 const program = utils.setupProgram(gl, vertexSrc, fragmentSrc)
 
+gl.clearColor(1, 1, 1, 1)
 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 const pickProgram = utils.setupProgram(gl, vertexPickSrc, fragmentPickSrc)
@@ -31,6 +32,7 @@ const loc = {
     color: 1,
     triangles: 2,
     id: 3,
+    active: 4,
   },
   u: {
     matrix: gl.getUniformLocation(program, 'u_matrix'),
@@ -51,12 +53,12 @@ const state = {
   zoom: 1,
 
   // pieces
-  amount: 10 ** 2,
+  amount: 20 ** 2,
 
   mouseX: 0,
   mouseY: 0,
 
-  hovered: -1
+  hovered: -1,
 }
 
 const defaultOptions = {
@@ -88,7 +90,7 @@ const pieces = makePieces(
 
         const piece = {
           id: getId(idx),
-          color: getRandomColor(Math.random() * 70 + 200),
+          color: getRandomColor(Math.random() * 30 - 15),
           position: { x, y },
           shapes: [...Array(4)].map(
             () => shapes[Math.floor(Math.random() * shapes.length)]
@@ -140,7 +142,7 @@ function setFramebufferAttachmentSizes(width, height) {
   gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height)
 }
 
-setFramebufferAttachmentSizes(gl.canvas.width, gl.canvas.height)
+setFramebufferAttachmentSizes(1, 1)
 
 // Create and bind the framebuffer
 const fb = gl.createFramebuffer()
@@ -183,6 +185,8 @@ const fpsGraph = pane.addBlade({
   label: 'FPS',
 })
 
+let currentlyActive = -1
+
 /**
  * render
  */
@@ -192,55 +196,45 @@ const drawScene = () => {
   gl.bindVertexArray(pieces.vao)
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, fb)
-  // gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
-
   gl.enable(gl.CULL_FACE)
-  // gl.enable(gl.DEPTH_TEST)
-
-  // Clear the canvas AND the depth buffer.
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
+  const pixelX =
+    (state.mouseX * gl.canvas.width) / gl.canvas.clientWidth / gl.canvas.width
+  const pixelY =
+    (gl.canvas.height -
+      (state.mouseY * gl.canvas.height) / gl.canvas.clientHeight -
+      1) /
+    gl.canvas.height
 
   // draw to frame buffer
   gl.useProgram(pickProgram)
-  gl.uniformMatrix3fv(loc.u.pickMatrix, false, matrix)
+  gl.uniformMatrix3fv(
+    loc.u.pickMatrix,
+    false,
+    makeCameraMatrix(pixelX * 2, pixelY * 2)
+  )
   gl.uniform2fv(loc.u.pickResolution, [window.innerWidth, window.innerHeight])
   gl.drawArrays(gl.TRIANGLES, 0, pieces.verticesLength)
 
-  /**
-   * read pixel under mouse
-   */
-  const pixelX = (state.mouseX * gl.canvas.width) / gl.canvas.clientWidth
-  const pixelY =
-    gl.canvas.height -
-    (state.mouseY * gl.canvas.height) / gl.canvas.clientHeight -
-    1
-
   const data = new Uint8Array(4)
 
-  // console.log(pixelX, pixelY)
-
-  gl.readPixels(
-    pixelX, // x
-    pixelY, // y
-    1, // width
-    1, // height
-    gl.RGBA, // format
-    gl.UNSIGNED_BYTE, // type
-    data
-  ) // typed array to hold result
+  gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, data)
 
   const id = data[0] + (data[1] << 8) + (data[2] << 16) + (data[3] << 24)
 
-  if (id > 0) {
-    state.hovered = id
-  } else {
-    state.hovered = -1
+  if (currentlyActive > -1) {
+    pieces.activate(currentlyActive, false)
+    currentlyActive = -1
   }
 
-  // ------ Draw the objects to the canvas
+  if (id > 0) {
+    pieces.activate(id, true)
+    currentlyActive = id
+    state.hovered = id
+  }
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-  // gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 
   //
   gl.useProgram(program)
@@ -257,10 +251,13 @@ const drawScene = () => {
 /**
  * camera
  */
-function makeCameraMatrix() {
+function makeCameraMatrix(adjustX = 0, adjustY = 0) {
   const zoomScale = 1 / state.zoom
   return m3.pipe(
-    m3.translate(state.translation.x, state.translation.y),
+    m3.translate(
+      state.translation.x + adjustX * zoomScale,
+      state.translation.y + adjustY * zoomScale
+    ),
     m3.rotate(state.rotation),
     m3.scale(zoomScale, zoomScale),
     m3.inverse

@@ -17,7 +17,7 @@ export const makePieces = (gl, loc, pieces, options) => {
     globalVertexIndex += objectLength
 
     return {
-      id: id || idx,
+      id: idx,
       bufferIndex: ownIndex,
       objectLength,
       vertices: {
@@ -25,6 +25,7 @@ export const makePieces = (gl, loc, pieces, options) => {
         object: objectVertices.vertices,
         color: Array(objectLength).fill(color).flat(),
         position: Array(objectLength).fill([position.x, position.y]).flat(),
+        active: Array(objectLength).fill(0),
         id: Array(objectLength).fill(getId(idx)).flat(),
       },
     }
@@ -48,6 +49,10 @@ export const makePieces = (gl, loc, pieces, options) => {
       attributeLength: 2,
     },
     {
+      name: 'active',
+      attributeLength: 1,
+    },
+    {
       name: 'id',
       attributeLength: 4,
     },
@@ -58,8 +63,6 @@ export const makePieces = (gl, loc, pieces, options) => {
 
   const buffers = buffersData.reduce((acc, cur) => {
     const dataArray = piecesData.map(piece => piece.vertices[cur.name]).flat()
-
-    // console.log(cur.name, dataArray)
 
     const buffer = gl.createBuffer()
 
@@ -100,6 +103,18 @@ export const makePieces = (gl, loc, pieces, options) => {
         gl.ARRAY_BUFFER,
         piece.bufferIndex * 2 * Float32Array.BYTES_PER_ELEMENT,
         new Float32Array(newPositionData),
+        0
+      )
+    },
+    activate: (id, isActive) => {
+      const piece = piecesData.find(piece => piece.id === id - 1)
+      const newActiveData = Array(piece.objectLength).fill(isActive ? 1 : 0)
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffers.active)
+      gl.bufferSubData(
+        gl.ARRAY_BUFFER,
+        piece.bufferIndex * Float32Array.BYTES_PER_ELEMENT,
+        new Float32Array(newActiveData),
         0
       )
     },

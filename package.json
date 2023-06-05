@@ -2,8 +2,5 @@
   "type": "module",
   "scripts": {
     "dev": "node app.js & browser-sync start --proxy 'http://localhost:3012' --no-notify --files 'pages/**/*.*'"
-  },
-  "dependencies": {
-    "twgl.js": "^5.3.1"
   }
 }
